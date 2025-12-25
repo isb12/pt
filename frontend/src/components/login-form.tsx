@@ -55,14 +55,14 @@ export function LoginForm({
                 <CardHeader>
                     <CardTitle className="text-xl">Вход в систему</CardTitle>
                     <CardDescription>
-                        Введите вашу почту или никнейм ниже
+                        Введите вашу почту или Username ниже
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Field>
-                                <FieldLabel htmlFor="email">Email или Никнейм</FieldLabel>
+                                <FieldLabel htmlFor="email">Email или Username</FieldLabel>
                                 <Input
                                     id="email"
                                     type="text"

@@ -284,7 +284,7 @@ const CompanySettings = () => {
                     </CardHeader>
                     <CardContent className="grid gap-4">
                         {formData.responsible_persons.map((person: any, index: number) => (
-                            <div key={index} className="p-4 border rounded-lg bg-emerald-50/10 border-emerald-100 flex gap-6 items-start">
+                            <div key={index} className="p-4 border rounded-lg bg-primary/5 border-primary/10 flex gap-6 items-start">
                                 <div className="grid flex-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <Label className="text-xs">ФИО ({person.role})</Label>

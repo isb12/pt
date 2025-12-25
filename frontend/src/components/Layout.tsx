@@ -134,7 +134,7 @@ const Layout = () => {
                 <header className="flex h-12 shrink-0 items-center justify-between pl-3 pr-4 border-b bg-background z-20">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center">
-                            <div className="flex aspect-square size-6 items-center justify-center rounded-md bg-emerald-600 text-white shadow-sm">
+                            <div className="flex aspect-square size-6 items-center justify-center rounded-md bg-primary text-white shadow-sm">
                                 <Building2 className="size-3.5" />
                             </div>
                         </div>
@@ -148,7 +148,7 @@ const Layout = () => {
                                 <div className="flex items-center gap-1.5">
                                     <Avatar className="h-6 w-6 border shadow-sm flex-shrink-0">
                                         <AvatarImage src={company.logo} alt={company.name} />
-                                        <AvatarFallback className="bg-emerald-50 text-emerald-700 text-[9px]">
+                                        <AvatarFallback className="bg-primary/10 text-primary text-[9px]">
                                             {company.name?.[0] || 'C'}
                                         </AvatarFallback>
                                     </Avatar>
@@ -162,12 +162,12 @@ const Layout = () => {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="w-56" align="start">
                                         <DropdownMenuLabel className="text-xs text-muted-foreground">Организация: {company.type}</DropdownMenuLabel>
-                                        <Link to="/company-settings">
-                                            <DropdownMenuItem className="cursor-pointer">
+                                        <DropdownMenuItem asChild>
+                                            <Link to="/company-settings" className="cursor-pointer">
                                                 <Settings className="mr-2 h-4 w-4" />
                                                 <span>Профиль компании</span>
-                                            </DropdownMenuItem>
-                                        </Link>
+                                            </Link>
+                                        </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
@@ -193,7 +193,7 @@ const Layout = () => {
                             <DropdownMenuTrigger asChild>
                                 <Avatar className="h-7 w-7 cursor-pointer border ring-primary/20 transition-all hover:ring-4">
                                     <AvatarImage src={user?.avatar} alt={user?.username} />
-                                    <AvatarFallback className="bg-emerald-50 text-emerald-700 text-xs">
+                                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
                                         {user?.username?.[0] || 'U'}
                                     </AvatarFallback>
                                 </Avatar>
@@ -206,18 +206,18 @@ const Layout = () => {
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <Link to="/account">
-                                    <DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link to="/account">
                                         <UserIcon className="mr-2 h-4 w-4" />
                                         <span>Аккаунт</span>
-                                    </DropdownMenuItem>
-                                </Link>
-                                <Link to="/company-settings">
-                                    <DropdownMenuItem>
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link to="/company-settings">
                                         <Settings className="mr-2 h-4 w-4" />
                                         <span>Настройки компании</span>
-                                    </DropdownMenuItem>
-                                </Link>
+                                    </Link>
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={handleLogout}>
                                     <LogOut className="mr-2 h-4 w-4" />

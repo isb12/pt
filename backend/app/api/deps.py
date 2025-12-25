@@ -32,6 +32,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user is None:
         raise credentials_exception
         
+    print(f"DEP CHECK: User={user.email}, CompanyID={user.company_id}, CompanyObject={user.company}")
+    
     if version and user.token_version and version != user.token_version:
         raise credentials_exception
         

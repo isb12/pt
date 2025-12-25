@@ -69,9 +69,12 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 @router.get("/me", response_model=schemas.User)
-async def read_users_me(current_user: models.User = Depends(get_current_user)):
+async def read_users_me(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    db.refresh(current_user)
     user_out = schemas.User.model_validate(current_user)
-    user_out.has_company = current_user.company is not None
+    # Be absolutely explicit
+    user_out.has_company = current_user.company_id is not None
+    print(f"ME ENDPOINT: User={user_out.email}, CompID={current_user.company_id}, has_company={user_out.has_company}")
     return user_out
 
 @router.put("/me", response_model=schemas.User)

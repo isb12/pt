@@ -35,6 +35,10 @@ def create_company(
     db.add(db_company)
     db.flush() # Get company ID
 
+    # Link creator to this company
+    current_user.company_id = db_company.id
+    db.add(current_user)
+
     # Add Bank Accounts
     for ba in company_in.bank_accounts:
         db_ba = models.BankAccount(**ba.model_dump(), company_id=db_company.id)
@@ -52,6 +56,7 @@ def create_company(
 
     db.commit()
     db.refresh(db_company)
+    db.refresh(current_user)
     return db_company
 
 @router.get("/my", response_model=schemas.Company)
@@ -59,9 +64,19 @@ def get_my_company(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    if not current_user.company:
-        raise HTTPException(status_code=404, detail="Company not found")
-    return current_user.company
+    print(f"MY COMPANY LOOKUP: UserID={current_user.id}, CompanyID={current_user.company_id}")
+    if current_user.company:
+        return current_user.company
+    
+    # Fallback if relationship is not loaded but ID exists
+    if current_user.company_id:
+        print(f"FALLBACK LOOKUP: CompanyID={current_user.company_id}")
+        company = db.query(models.Company).filter(models.Company.id == current_user.company_id).first()
+        if company:
+            return company
+            
+    print("MY COMPANY LOOKUP FAILED: 404")
+    raise HTTPException(status_code=404, detail="Company not found")
 
 @router.put("/my", response_model=schemas.Company)
 def update_company(

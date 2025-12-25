@@ -129,7 +129,10 @@ const Onboarding = () => {
         try {
             await api.post('/companies/', cleanedData);
             toast.success("Компания успешно зарегистрирована!");
-            window.location.href = '/';
+            // Hard reload is generally safer to reset Layout state
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 500);
         } catch (err: any) {
             console.error(err);
             toast.error(err.response?.data?.detail || 'Ошибка при сохранении данных');
@@ -324,8 +327,8 @@ const Onboarding = () => {
                         {step === 4 && (
                             <div className="grid gap-6">
                                 {formData.responsible_persons.map((person: any, index: number) => (
-                                    <div key={index} className="p-6 border rounded-xl bg-emerald-50/20 border-emerald-100 shadow-sm transition-all hover:shadow-md">
-                                        <h3 className="text-lg font-bold text-emerald-800 border-b border-emerald-100 pb-3 mb-4">{person.role}</h3>
+                                    <div key={index} className="p-6 border rounded-xl bg-primary/5 border-primary/10 shadow-sm transition-all hover:shadow-md">
+                                        <h3 className="text-lg font-bold text-primary border-b border-primary/10 pb-3 mb-4">{person.role}</h3>
                                         <div className="grid md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
                                                 <Label>ФИО полностью</Label>

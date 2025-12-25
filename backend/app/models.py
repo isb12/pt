@@ -15,7 +15,11 @@ class User(Base):
     
     # Relationship to Company as a member
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
-    company = relationship("Company", back_populates="users", foreign_keys=[company_id])
+    company = relationship("Company", back_populates="users", foreign_keys="User.company_id")
+
+    @property
+    def has_company(self):
+        return self.company_id is not None
 
 class Company(Base):
     __tablename__ = "companies"
@@ -39,7 +43,7 @@ class Company(Base):
     owner = relationship("User", foreign_keys=[owner_id])
     
     # All users belonging to this company
-    users = relationship("User", back_populates="company", foreign_keys="[User.company_id]")
+    users = relationship("User", back_populates="company", foreign_keys="User.company_id")
     
     # Related collections
     bank_accounts = relationship("BankAccount", back_populates="company", cascade="all, delete-orphan")
