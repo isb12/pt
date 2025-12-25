@@ -4,6 +4,7 @@ import {
     FileText,
     Warehouse,
     Users,
+    Settings as SettingsIcon,
 } from "lucide-react"
 import { NavLink } from "react-router-dom"
 
@@ -40,6 +41,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/counterparties",
             icon: Users,
         },
+        {
+            title: "Настройки",
+            url: "/settings",
+            icon: SettingsIcon,
+        },
     ]
 
     return (
@@ -54,8 +60,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         tooltip={item.title}
                                         isActive={isActive}
                                         className={`transition-colors flex items-center gap-2 ${isActive
-                                                ? "text-foreground"
-                                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                            ? "text-foreground"
+                                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                             }`}
                                     >
                                         {item.icon && <item.icon className="size-4" />}

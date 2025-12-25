@@ -8,6 +8,7 @@ import Account from './pages/Account';
 import Onboarding from './pages/Onboarding';
 import CompanySettings from './pages/CompanySettings';
 import Home from './pages/Home';
+import Settings from './pages/Settings';
 import { Toaster } from "@/components/ui/sonner"
 
 function App() {
@@ -26,7 +27,7 @@ function App() {
           <Route path="warehouse" element={<PlaceholderPage title="Склад" />} />
           <Route path="counterparties" element={<PlaceholderPage title="Контрагенты" />} />
           <Route path="account" element={<Account />} />
-          <Route path="settings" element={<PlaceholderPage title="Настройки" />} />
+          <Route path="settings" element={<Settings />} />
           <Route path="company-settings" element={<CompanySettings />} />
         </Route>
 

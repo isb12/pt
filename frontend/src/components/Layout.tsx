@@ -113,7 +113,7 @@ const Layout = () => {
     return (
         <SidebarProvider>
             <div className="flex h-screen w-full flex-col overflow-hidden">
-                <header className="flex h-12 shrink-0 items-center justify-between pl-3 pr-4 border-b bg-background z-20">
+                <header className="flex h-12 shrink-0 items-center justify-between pl-3 pr-4 bg-background z-20">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center">
                             <div className="flex aspect-square size-6 items-center justify-center rounded-md bg-emerald-600 text-white shadow-sm">
@@ -211,7 +211,7 @@ const Layout = () => {
                 </header>
                 <div className="flex flex-1 overflow-hidden">
                     <AppSidebar className="top-12 h-[calc(100vh-3rem)]" />
-                    <SidebarInset className="overflow-auto bg-muted/20">
+                    <SidebarInset className="overflow-auto bg-background">
                         <div className="p-6">
                             <Outlet />
                         </div>
