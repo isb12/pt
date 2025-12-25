@@ -21,6 +21,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import { LogOut, User as UserIcon, Settings, Building2, ChevronsUpDown } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 
@@ -92,8 +93,25 @@ const Layout = () => {
         return <Navigate to="/login" replace />;
     }
 
-    if (user && !user.has_company && location.pathname !== '/onboarding') {
-        return <Navigate to="/onboarding" replace />;
+    if (user && !user.has_company) {
+        if (user.is_admin) {
+            if (location.pathname !== '/onboarding') {
+                return <Navigate to="/onboarding" replace />;
+            }
+        } else {
+            return (
+                <div className="flex h-screen items-center justify-center p-4 text-center bg-background text-foreground">
+                    <div className="max-w-md space-y-4">
+                        <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <h1 className="text-2xl font-bold">Компания не найдена</h1>
+                        <p className="text-muted-foreground">
+                            Похоже, администратор еще не настроил компанию. Пожалуйста, обратитесь к администратору системы.
+                        </p>
+                        <Button onClick={handleLogout} variant="outline">Выйти</Button>
+                    </div>
+                </div>
+            );
+        }
     }
 
     const getPageTitle = (pathname: string) => {
@@ -113,7 +131,7 @@ const Layout = () => {
     return (
         <SidebarProvider>
             <div className="flex h-screen w-full flex-col overflow-hidden">
-                <header className="flex h-12 shrink-0 items-center justify-between pl-3 pr-4 bg-background z-20">
+                <header className="flex h-12 shrink-0 items-center justify-between pl-3 pr-4 border-b bg-background z-20">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center">
                             <div className="flex aspect-square size-6 items-center justify-center rounded-md bg-emerald-600 text-white shadow-sm">

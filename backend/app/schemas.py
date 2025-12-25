@@ -17,6 +17,7 @@ class UserUpdate(BaseModel):
 
 class User(UserBase):
     id: int
+    is_admin: bool = False
     avatar: Optional[str] = None
     has_company: bool = False
     

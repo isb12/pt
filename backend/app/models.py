@@ -13,8 +13,9 @@ class User(Base):
     avatar = Column(String, nullable=True)
     token_version = Column(Integer, default=1)
     
-    # Relationship to Company
-    company = relationship("Company", back_populates="owner", uselist=False)
+    # Relationship to Company as a member
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
+    company = relationship("Company", back_populates="users", foreign_keys=[company_id])
 
 class Company(Base):
     __tablename__ = "companies"
@@ -33,8 +34,12 @@ class Company(Base):
     email = Column(String)
     website = Column(String, nullable=True)
     
-    owner_id = Column(Integer, ForeignKey("users.id"))
-    owner = relationship("User", back_populates="company")
+    # The admin/user who created it
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    owner = relationship("User", foreign_keys=[owner_id])
+    
+    # All users belonging to this company
+    users = relationship("User", back_populates="company", foreign_keys="[User.company_id]")
     
     # Related collections
     bank_accounts = relationship("BankAccount", back_populates="company", cascade="all, delete-orphan")

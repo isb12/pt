@@ -12,8 +12,11 @@ def create_company(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    if current_user.company:
-        raise HTTPException(status_code=400, detail="User already has a company")
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Only administrators can create companies"
+        )
 
     # Create Company instance
     db_company = models.Company(

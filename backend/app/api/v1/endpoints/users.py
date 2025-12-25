@@ -53,7 +53,16 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Username already taken")
 
     hashed_password = auth.get_password_hash(user.password)
-    db_user = models.User(email=user.email, username=user.username, hashed_password=hashed_password)
+    
+    # Auto-link to the first company
+    main_company = db.query(models.Company).first()
+    
+    db_user = models.User(
+        email=user.email, 
+        username=user.username, 
+        hashed_password=hashed_password,
+        company_id=main_company.id if main_company else None
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
