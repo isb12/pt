@@ -57,6 +57,39 @@ class AdminAuth(AuthenticationBackend):
 
 authentication_backend = AdminAuth(secret_key=auth.SECRET_KEY)
 
+def render_avatar(user):
+    if not user:
+        return ""
+    
+    avatar_data = getattr(user, "avatar", None)
+    if avatar_data and len(str(avatar_data)) > 50: 
+         img_html = f'<img src="/api/v1/users/{user.id}/avatar" width="30" height="30" style="border-radius: 50%; object-fit: cover; margin-right: 8px;">'
+    else:
+        colors = [
+            "#1abc9c", "#2ecc71", "#3498db", "#9b59b6", "#34495e", 
+            "#16a085", "#27ae60", "#2980b9", "#8e44ad", "#2c3e50", 
+            "#f1c40f", "#e67e22", "#e74c3c", "#ecf0f1", "#95a5a6", 
+            "#f39c12", "#d35400", "#c0392b", "#bdc3c7", "#7f8c8d"
+        ]
+        color = colors[hash(user.username or "") % len(colors)]
+        initial = user.username[0].upper() if user.username else "?"
+        img_html = f'<div style="width: 30px; height: 30px; border-radius: 50%; background-color: {color}; color: white; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; margin-right: 8px;">{initial}</div>'
+    
+    return Markup(f'<div style="display: flex; align-items: center;">{img_html}<span>{user.username}</span></div>')
+
+def render_company_logo(company):
+    if not company:
+        return ""
+    
+    logo_data = getattr(company, "logo", None)
+    if logo_data:
+         img_html = f'<img src="{logo_data}" width="30" height="30" style="border-radius: 4px; object-fit: cover; margin-right: 8px;">'
+    else:
+        initial = company.name[0].upper() if company.name else "?"
+        img_html = f'<div style="width: 30px; height: 30px; border-radius: 4px; background-color: #34495e; color: white; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; margin-right: 8px;">{initial}</div>'
+    
+    return Markup(f'<div style="display: flex; align-items: center; white-space: nowrap;">{img_html}<span>{company.bin_iin}</span></div>')
+
 class UserAdmin(ModelView, model=models.User):
     column_list = [models.User.id, models.User.username, models.User.email, models.User.is_admin, models.User.avatar]
     
@@ -112,6 +145,14 @@ class CompanyAdmin(ModelView, model=models.Company):
         models.Company.bin_iin, 
         models.Company.owner
     ]
+    
+    def format_owner(m, a):
+        return render_avatar(m.owner)
+
+    column_formatters = {
+        models.Company.owner: format_owner
+    }
+    
     column_details_list = "__all__"
     column_searchable_list = [models.Company.name, models.Company.bin_iin]
     icon = "fa-solid fa-building"
@@ -120,21 +161,45 @@ class CompanyAdmin(ModelView, model=models.Company):
 
 class BankAccountAdmin(ModelView, model=models.BankAccount):
     column_list = [models.BankAccount.id, models.BankAccount.bank_name, models.BankAccount.iik, models.BankAccount.currency, models.BankAccount.company]
+    
+    def format_company(m, a):
+        return render_company_logo(m.company)
+
+    column_formatters = {
+        models.BankAccount.company: format_company
+    }
+    
     icon = "fa-solid fa-credit-card"
     name = "Банковский счет"
     name_plural = "Банковские счета"
 
 class AddressAdmin(ModelView, model=models.Address):
     column_list = [models.Address.id, models.Address.full_address, models.Address.is_legal, models.Address.company]
+    
+    def format_company(m, a):
+        return render_company_logo(m.company)
+
+    column_formatters = {
+        models.Address.company: format_company
+    }
+    
     icon = "fa-solid fa-map-pin"
     name = "Адрес"
     name_plural = "Адреса"
 
 class ResponsiblePersonAdmin(ModelView, model=models.ResponsiblePerson):
     column_list = [models.ResponsiblePerson.id, models.ResponsiblePerson.full_name, models.ResponsiblePerson.role, models.ResponsiblePerson.company]
+    
+    def format_company(m, a):
+        return render_company_logo(m.company)
+
+    column_formatters = {
+        models.ResponsiblePerson.signature_stamp: "Signature",
+        models.ResponsiblePerson.company: format_company
+    }
+    
     column_labels = {
         models.ResponsiblePerson.signature_stamp: "Signature"
     }
     icon = "fa-solid fa-user-tie"
     name = "Ответственное лицо"
-    name_plural = "Ответственные лица"
