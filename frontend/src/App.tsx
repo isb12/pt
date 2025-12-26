@@ -25,10 +25,12 @@ function App() {
           {/* Protected Dashboard Routes */}
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
-            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="finance" element={<PlaceholderPage title="Финансы" />} />
             <Route path="documents" element={<PlaceholderPage title="Документы" />} />
-            <Route path="warehouse" element={<PlaceholderPage title="Склад" />} />
             <Route path="counterparties" element={<PlaceholderPage title="Контрагенты" />} />
+            <Route path="warehouse" element={<PlaceholderPage title="Склад" />} />
+            <Route path="hr" element={<PlaceholderPage title="Сотрудники" />} />
+            <Route path="dashboard" element={<Dashboard />} />
             <Route path="settings" element={<SettingsLayout />}>
               <Route index element={<Navigate to="/settings/main" replace />} />
               <Route path="main" element={<Settings />} />

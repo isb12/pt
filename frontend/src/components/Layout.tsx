@@ -87,9 +87,11 @@ const Layout = () => {
         }
         switch (pathname) {
             case '/': return 'Главная';
+            case '/finance': return 'Финансы';
             case '/documents': return 'Документы';
             case '/warehouse': return 'Склад';
             case '/counterparties': return 'Контрагенты';
+            case '/hr': return 'Сотрудники';
             case '/onboarding': return 'Регистрация компании';
             default: return 'Project';
         }
@@ -106,14 +108,14 @@ const Layout = () => {
                             </div>
                         </div>
 
-                        <svg width="6" height="14" viewBox="0 0 6 14" fill="none" className="text-muted-foreground/30 select-none mx-0.5">
-                            <path d="M4.5 1L1.5 13" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+                        <svg width="10" height="14" viewBox="0 0 10 14" fill="none" className="text-muted-foreground/30 select-none mx-0.5">
+                            <path d="M8 1L2 13" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
                         </svg>
 
                         {company && (
                             <Link
                                 to="/settings/company"
-                                className="flex items-center gap-2 hover:bg-muted p-1 px-1.5 -ml-1 rounded-md transition-colors transition-opacity active:opacity-70 group"
+                                className="flex items-center gap-2 transition-opacity active:opacity-70 group"
                             >
                                 <div className="h-6 w-6 border shadow-sm flex-shrink-0 rounded-sm overflow-hidden bg-primary/10">
                                     {company.logo ? (
@@ -130,8 +132,8 @@ const Layout = () => {
                             </Link>
                         )}
 
-                        <svg width="6" height="14" viewBox="0 0 6 14" fill="none" className="text-muted-foreground/30 select-none mx-0.5 hidden md:block">
-                            <path d="M4.5 1L1.5 13" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+                        <svg width="10" height="14" viewBox="0 0 10 14" fill="none" className="text-muted-foreground/30 select-none mx-0.5 hidden md:block">
+                            <path d="M8 1L2 13" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
                         </svg>
 
                         <Breadcrumb className="hidden lg:block select-none">

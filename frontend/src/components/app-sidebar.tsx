@@ -1,10 +1,11 @@
-import * as React from "react"
 import {
-    LayoutDashboard,
     FileText,
     Warehouse,
     Users,
     Settings as SettingsIcon,
+    Wallet,
+    UserCircle,
+    House,
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 
@@ -26,7 +27,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {
             title: "Главная",
             url: "/",
-            icon: LayoutDashboard,
+            icon: House,
         },
         {
             title: "Документы",
@@ -34,14 +35,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             icon: FileText,
         },
         {
-            title: "Склад",
-            url: "/warehouse",
-            icon: Warehouse,
+            title: "Финансы",
+            url: "/finance",
+            icon: Wallet,
         },
         {
             title: "Контрагенты",
             url: "/counterparties",
             icon: Users,
+        },
+        {
+            title: "Склад",
+            url: "/warehouse",
+            icon: Warehouse,
+        },
+        {
+            title: "Сотрудники",
+            url: "/hr",
+            icon: UserCircle,
         },
         {
             title: "Настройки",
