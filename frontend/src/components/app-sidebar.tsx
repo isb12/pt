@@ -6,7 +6,7 @@ import {
     Users,
     Settings as SettingsIcon,
 } from "lucide-react"
-import { NavLink } from "react-router-dom"
+import { NavLink, useLocation } from "react-router-dom"
 
 import {
     Sidebar,
@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/sidebar"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const location = useLocation()
+
     const navMain = [
         {
             title: "Главная",
@@ -43,7 +45,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         },
         {
             title: "Настройки",
-            url: "/settings",
+            url: "/settings/main",
             icon: SettingsIcon,
         },
     ]
@@ -51,15 +53,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarContent className="pt-2">
-                <SidebarMenu className="px-2">
-                    {navMain.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                            <NavLink to={item.url}>
-                                {({ isActive }) => (
+                <SidebarMenu className="px-2 gap-1">
+                    {navMain.map((item) => {
+                        const isSettingsItem = item.url.startsWith("/settings/")
+                        const isItemActive = isSettingsItem
+                            ? location.pathname.startsWith("/settings/")
+                            : location.pathname === item.url || (item.url !== "/" && location.pathname.startsWith(item.url))
+
+                        return (
+                            <SidebarMenuItem key={item.title}>
+                                <NavLink to={item.url}>
                                     <SidebarMenuButton
                                         tooltip={item.title}
-                                        isActive={isActive}
-                                        className={`transition-colors flex items-center gap-2 ${isActive
+                                        isActive={isItemActive}
+                                        className={`transition-colors flex items-center gap-2 ${isItemActive
                                             ? "text-foreground"
                                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                             }`}
@@ -67,10 +74,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         {item.icon && <item.icon className="size-4" />}
                                         <span className="font-medium">{item.title}</span>
                                     </SidebarMenuButton>
-                                )}
-                            </NavLink>
-                        </SidebarMenuItem>
-                    ))}
+                                </NavLink>
+                            </SidebarMenuItem>
+                        )
+                    })}
                 </SidebarMenu>
             </SidebarContent>
             <SidebarFooter className="p-2">

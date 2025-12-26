@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAppContext } from '../context/AppContext';
 import api, { setToken } from '../api';
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -23,6 +24,7 @@ export function LoginForm({
     className,
     ...props
 }: React.ComponentProps<"div">) {
+    const { setIsAuthenticated } = useAppContext();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -39,6 +41,7 @@ export function LoginForm({
 
             const response = await api.post('/users/token', formData);
             setToken(response.data.access_token);
+            setIsAuthenticated(true);
             toast.success("Вход выполнен успешно");
             navigate('/');
         } catch (err: any) {

@@ -1,20 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { useAppContext } from '../context/AppContext';
 import {
-    Building2,
-    CreditCard,
-    MapPin,
-    Users,
-    Upload,
     Plus,
     Trash2,
     CheckCircle2,
     ChevronRight,
     ChevronLeft,
-    Loader2
+    Loader2,
+    Upload
 } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,6 +21,7 @@ import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 
 const Onboarding = () => {
+    const { fetchUser, fetchCompany } = useAppContext();
     const [step, setStep] = useState(1);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
@@ -62,8 +60,7 @@ const Onboarding = () => {
         bank_accounts: [{ iik: '', bank_name: '', bik: '', currency: 'KZT', is_primary: true }],
         addresses: [{ full_address: '', is_legal: true }],
         responsible_persons: [
-            { role: 'Директор', full_name: '', gender: 'Мужской', birth_date: '', iin: '', residency: 'Казахстан', signature_stamp: null },
-            { role: 'Главный бухгалтер', full_name: '', gender: 'Женский', birth_date: '', iin: '', residency: 'Казахстан', signature_stamp: null }
+            { role: 'Директор', full_name: '', gender: 'Мужской', birth_date: '', iin: '', residency: 'Казахстан', signature_stamp: null }
         ]
     });
 
@@ -106,15 +103,7 @@ const Onboarding = () => {
         }
     };
 
-    const handlePersonFileChange = (index: number, file: File | undefined) => {
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                handleNestedChange(index, 'responsible_persons', 'signature_stamp', reader.result);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+
 
     const handleSubmit = async () => {
         setLoading(true);
@@ -129,10 +118,9 @@ const Onboarding = () => {
         try {
             await api.post('/companies/', cleanedData);
             toast.success("Компания успешно зарегистрирована!");
-            // Hard reload is generally safer to reset Layout state
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 500);
+            await fetchUser();
+            await fetchCompany();
+            navigate('/');
         } catch (err: any) {
             console.error(err);
             toast.error(err.response?.data?.detail || 'Ошибка при сохранении данных');
@@ -142,6 +130,12 @@ const Onboarding = () => {
     };
 
     if (userLoading) return null;
+
+    const isStep1Valid = Boolean(
+        formData.name?.trim() &&
+        formData.bin_iin?.trim() && formData.bin_iin.trim().length === 12 &&
+        formData.kbe?.trim()
+    );
 
     return (
         <div className="min-h-screen bg-muted/40 p-4 md:p-8">
@@ -167,228 +161,317 @@ const Onboarding = () => {
                     </div>
                 </div>
 
-                <Card className="shadow-lg border-2 border-primary/5">
-                    <CardHeader className="bg-primary/5 border-b py-6">
-                        <CardTitle className="flex items-center gap-3 text-2xl">
-                            {step === 1 && <><Building2 className="text-primary" /> Юридическая информация</>}
-                            {step === 2 && <><CreditCard className="text-primary" /> Банковские счета</>}
-                            {step === 3 && <><MapPin className="text-primary" /> Адреса и Контакты</>}
-                            {step === 4 && <><Users className="text-primary" /> Ответственные лица</>}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6 md:p-8">
-                        {step === 1 && (
-                            <div className="grid gap-6">
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Название компании</Label>
-                                        <Input name="name" value={formData.name} onChange={handleChange} placeholder="ТОО 'Моя Компания'" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Тип</Label>
-                                        <Select value={formData.type} onValueChange={(v) => setFormData((p: any) => ({ ...p, type: v }))}>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="ТОО">ТОО</SelectItem>
-                                                <SelectItem value="ИП">ИП</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>БИН / ИИН</Label>
-                                        <Input name="bin_iin" value={formData.bin_iin} onChange={handleChange} placeholder="12 цифр" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Код бенефициара (Кбе)</Label>
-                                        <Input name="kbe" value={formData.kbe} onChange={handleChange} placeholder="17" />
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox id="vat" checked={formData.vat_status} onCheckedChange={(v) => setFormData((p: any) => ({ ...p, vat_status: v }))} />
-                                    <label htmlFor="vat" className="text-sm font-medium">Плательщик НДС</label>
-                                </div>
-                                <div className="grid grid-cols-2 gap-6 pt-4">
-                                    <div className="space-y-2">
-                                        <Label>Логотип</Label>
-                                        <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 hover:bg-muted/50 transition-colors cursor-pointer group" onClick={() => document.getElementById('logo-up')?.click()}>
-                                            {formData.logo ? <img src={formData.logo} className="h-20 w-auto object-contain" /> : <Upload className="h-8 w-8 text-muted-foreground group-hover:text-primary" />}
-                                            <span className="text-xs text-muted-foreground mt-2">Загрузить JPG/PNG</span>
-                                            <input type="file" id="logo-up" hidden onChange={(e) => handleFileChange(e, 'logo')} />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Печать компании</Label>
-                                        <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 hover:bg-muted/50 transition-colors cursor-pointer group" onClick={() => document.getElementById('stamp-up')?.click()}>
-                                            {formData.stamp ? <img src={formData.stamp} className="h-20 w-auto object-contain" /> : <Upload className="h-8 w-8 text-muted-foreground group-hover:text-primary" />}
-                                            <span className="text-xs text-muted-foreground mt-2">Загрузить JPG/PNG</span>
-                                            <input type="file" id="stamp-up" hidden onChange={(e) => handleFileChange(e, 'stamp')} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                <div className="space-y-4">
+                    <h2 className="text-xl font-semibold px-1">
+                        {step === 1 && "1. Юридическая информация"}
+                        {step === 2 && "2. Банковские счета"}
+                        {step === 3 && "3. Адреса и Контакты"}
+                        {step === 4 && "4. Ответственные лица"}
+                    </h2>
 
-                        {step === 2 && (
-                            <div className="space-y-6">
-                                {formData.bank_accounts.map((ba: any, index: number) => (
-                                    <div key={index} className="relative p-6 border rounded-xl bg-muted/20">
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label>Номер счёта (ИИК)</Label>
-                                                <Input value={ba.iik} onChange={(e) => handleNestedChange(index, 'bank_accounts', 'iik', e.target.value)} placeholder="KZ..." />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Название банка</Label>
-                                                <Input value={ba.bank_name} onChange={(e) => handleNestedChange(index, 'bank_accounts', 'bank_name', e.target.value)} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>БИК</Label>
-                                                <Input value={ba.bik} onChange={(e) => handleNestedChange(index, 'bank_accounts', 'bik', e.target.value)} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Валюта</Label>
-                                                <Select value={ba.currency} onValueChange={(v) => handleNestedChange(index, 'bank_accounts', 'currency', v)}>
-                                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="KZT">KZT</SelectItem>
-                                                        <SelectItem value="USD">USD</SelectItem>
-                                                        <SelectItem value="EUR">EUR</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
+                    <Card className="shadow-2xl border-none bg-card/50 backdrop-blur-sm">
+                        <CardContent className="p-6 md:p-10">
+                            {step === 1 && (
+                                <div className="grid gap-6">
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Название компании <span className="text-destructive">*</span></Label>
+                                            <Input name="name" value={formData.name} onChange={handleChange} placeholder="ТОО 'Моя Компания'" />
                                         </div>
-                                        <div className="flex items-center justify-between mt-4 pb-2">
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox id={`pba-${index}`} checked={ba.is_primary} onCheckedChange={(v) => handleNestedChange(index, 'bank_accounts', 'is_primary', v)} />
-                                                <Label htmlFor={`pba-${index}`}>Основной счёт</Label>
-                                            </div>
-                                            {formData.bank_accounts.length > 1 && (
-                                                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => removeListItem('bank_accounts', index)}>
-                                                    <Trash2 className="h-4 w-4 mr-2" /> Удалить
-                                                </Button>
+                                        <div className="space-y-2">
+                                            <Label>Тип <span className="text-destructive">*</span></Label>
+                                            <Select value={formData.type} onValueChange={(v) => setFormData((p: any) => ({ ...p, type: v }))}>
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="ТОО">ТОО</SelectItem>
+                                                    <SelectItem value="ИП">ИП</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>БИН / ИИН <span className="text-destructive">*</span></Label>
+                                            <Input name="bin_iin" value={formData.bin_iin} onChange={handleChange} placeholder="12 цифр" maxLength={12} />
+                                            {formData.bin_iin && formData.bin_iin.length !== 12 && (
+                                                <p className="text-[10px] text-destructive">Должно быть ровно 12 цифр</p>
                                             )}
                                         </div>
+                                        <div className="space-y-2">
+                                            <Label>Код бенефициара (Кбе) <span className="text-destructive">*</span></Label>
+                                            <Input name="kbe" value={formData.kbe} onChange={handleChange} placeholder="17" maxLength={2} />
+                                        </div>
                                     </div>
-                                ))}
-                                <Button variant="outline" className="w-full dashed border-2 border-dashed h-12" onClick={() => addListItem('bank_accounts', { iik: '', bank_name: '', bik: '', currency: 'KZT', is_primary: false })}>
-                                    <Plus className="h-4 w-4 mr-2" /> Добавить счёт
-                                </Button>
-                            </div>
-                        )}
-
-                        {step === 3 && (
-                            <div className="space-y-8">
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold flex items-center gap-2">Адреса</h3>
-                                    {formData.addresses.map((addr: any, index: number) => (
-                                        <div key={index} className="space-y-4 p-6 border rounded-xl bg-muted/20">
-                                            <div className="space-y-2">
-                                                <Label>Полный адрес</Label>
-                                                <Input value={addr.full_address} onChange={(e) => handleNestedChange(index, 'addresses', 'full_address', e.target.value)} />
+                                    <div className="grid grid-cols-2 gap-6 pt-2">
+                                        <div className="space-y-2">
+                                            <Label className="text-[13px] text-muted-foreground uppercase font-medium">Логотип</Label>
+                                            <div
+                                                className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 hover:bg-muted/50 transition-all cursor-pointer group h-[140px] bg-background/50"
+                                                onClick={() => document.getElementById('logo-up')?.click()}
+                                            >
+                                                {formData.logo ? (
+                                                    <img src={formData.logo} className="h-full w-full object-contain" alt="Logo" />
+                                                ) : (
+                                                    <>
+                                                        <Upload className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors mb-2" />
+                                                        <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Загрузить лого</span>
+                                                    </>
+                                                )}
+                                                <input type="file" id="logo-up" hidden onChange={(e) => handleFileChange(e, 'logo')} accept="image/*" />
                                             </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center space-x-2">
-                                                    <Checkbox id={`laddr-${index}`} checked={addr.is_legal} onCheckedChange={(v) => handleNestedChange(index, 'addresses', 'is_legal', v)} />
-                                                    <Label htmlFor={`laddr-${index}`}>Юридический адрес</Label>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[13px] text-muted-foreground uppercase font-medium">Печать компании</Label>
+                                            <div
+                                                className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 hover:bg-muted/50 transition-all cursor-pointer group h-[140px] bg-background/50"
+                                                onClick={() => document.getElementById('stamp-up')?.click()}
+                                            >
+                                                {formData.stamp ? (
+                                                    <img src={formData.stamp} className="h-full w-full object-contain" alt="Stamp" />
+                                                ) : (
+                                                    <>
+                                                        <Upload className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors mb-2" />
+                                                        <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Загрузить печать</span>
+                                                    </>
+                                                )}
+                                                <input type="file" id="stamp-up" hidden onChange={(e) => handleFileChange(e, 'stamp')} accept="image/*" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center space-x-2 pt-2">
+                                        <Checkbox id="vat" checked={formData.vat_status} onCheckedChange={(v) => setFormData((p: any) => ({ ...p, vat_status: v }))} aria-label="Плательщик НДС" />
+                                        <label htmlFor="vat" className="text-sm font-medium cursor-pointer">Плательщик НДС</label>
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 2 && (
+                                <div className="space-y-6">
+                                    {formData.bank_accounts.map((ba: any, index: number) => (
+                                        <div key={index} className="relative p-6 border rounded-xl bg-muted/20">
+                                            <div className="grid md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label>Номер счёта (ИИК)</Label>
+                                                    <Input value={ba.iik} onChange={(e) => handleNestedChange(index, 'bank_accounts', 'iik', e.target.value)} placeholder="KZ..." />
                                                 </div>
-                                                {formData.addresses.length > 1 && (
-                                                    <Button variant="ghost" size="sm" className="text-destructive" onClick={() => removeListItem('addresses', index)}>
-                                                        <Trash2 className="h-4 w-4" />
+                                                <div className="space-y-2">
+                                                    <Label>Название банка</Label>
+                                                    <Input value={ba.bank_name} onChange={(e) => handleNestedChange(index, 'bank_accounts', 'bank_name', e.target.value)} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>БИК</Label>
+                                                    <Input value={ba.bik} onChange={(e) => handleNestedChange(index, 'bank_accounts', 'bik', e.target.value)} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Валюта</Label>
+                                                    <Select value={ba.currency} onValueChange={(v) => handleNestedChange(index, 'bank_accounts', 'currency', v)}>
+                                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="KZT">KZT</SelectItem>
+                                                            <SelectItem value="USD">USD</SelectItem>
+                                                            <SelectItem value="EUR">EUR</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between mt-4 pb-2">
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox id={`pba-${index}`} checked={ba.is_primary} onCheckedChange={(v) => handleNestedChange(index, 'bank_accounts', 'is_primary', v)} />
+                                                    <Label htmlFor={`pba-${index}`}>Основной счёт</Label>
+                                                </div>
+                                                {formData.bank_accounts.length > 1 && (
+                                                    <Button variant="ghost" size="sm" className="text-destructive" onClick={() => removeListItem('bank_accounts', index)}>
+                                                        <Trash2 className="h-4 w-4 mr-2" /> Удалить
                                                     </Button>
                                                 )}
                                             </div>
                                         </div>
                                     ))}
-                                    <Button variant="outline" className="w-full dashed border-2 border-dashed h-12" onClick={() => addListItem('addresses', { full_address: '', is_legal: false })}>
-                                        <Plus className="h-4 w-4 mr-2" /> Добавить адрес
+                                    <Button variant="outline" className="w-full dashed border-2 border-dashed h-12" onClick={() => addListItem('bank_accounts', { iik: '', bank_name: '', bik: '', currency: 'KZT', is_primary: false })}>
+                                        <Plus className="h-4 w-4 mr-2" /> Добавить счёт
                                     </Button>
                                 </div>
-                                <Separator />
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold">Контакты компании</h3>
-                                    <div className="grid md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>Телефон</Label>
-                                            <Input name="phone" value={formData.phone} onChange={handleChange} placeholder="+7..." />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Email</Label>
-                                            <Input name="email" value={formData.email} onChange={handleChange} type="email" />
-                                        </div>
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label>Сайт</Label>
-                                            <Input name="website" value={formData.website} onChange={handleChange} placeholder="https://..." />
+                            )}
+
+                            {step === 3 && (
+                                <div className="space-y-8">
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-semibold flex items-center gap-2">Адреса</h3>
+                                        {formData.addresses.map((addr: any, index: number) => (
+                                            <div key={index} className="space-y-4 p-6 border rounded-xl bg-muted/20">
+                                                <div className="space-y-2">
+                                                    <Label>Полный адрес</Label>
+                                                    <Input value={addr.full_address} onChange={(e) => handleNestedChange(index, 'addresses', 'full_address', e.target.value)} />
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center space-x-2">
+                                                        <Checkbox id={`laddr-${index}`} checked={addr.is_legal} onCheckedChange={(v) => handleNestedChange(index, 'addresses', 'is_legal', v)} />
+                                                        <Label htmlFor={`laddr-${index}`}>Юридический адрес</Label>
+                                                    </div>
+                                                    {formData.addresses.length > 1 && (
+                                                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => removeListItem('addresses', index)}>
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <Button variant="outline" className="w-full dashed border-2 border-dashed h-12" onClick={() => addListItem('addresses', { full_address: '', is_legal: false })}>
+                                            <Plus className="h-4 w-4 mr-2" /> Добавить адрес
+                                        </Button>
+                                    </div>
+                                    <Separator />
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-semibold">Контакты компании</h3>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label>Телефон</Label>
+                                                <Input name="phone" value={formData.phone} onChange={handleChange} placeholder="+7..." />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Email</Label>
+                                                <Input name="email" value={formData.email} onChange={handleChange} type="email" />
+                                            </div>
+                                            <div className="space-y-2 md:col-span-2">
+                                                <Label>Сайт</Label>
+                                                <Input name="website" value={formData.website} onChange={handleChange} placeholder="https://..." />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {step === 4 && (
-                            <div className="grid gap-6">
-                                {formData.responsible_persons.map((person: any, index: number) => (
-                                    <div key={index} className="p-6 border rounded-xl bg-primary/5 border-primary/10 shadow-sm transition-all hover:shadow-md">
-                                        <h3 className="text-lg font-bold text-primary border-b border-primary/10 pb-3 mb-4">{person.role}</h3>
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label>ФИО полностью</Label>
-                                                <Input value={person.full_name} onChange={(e) => handleNestedChange(index, 'responsible_persons', 'full_name', e.target.value)} />
+                            {step === 4 && (
+                                <div className="grid gap-6">
+                                    {formData.responsible_persons.map((person: any, index: number) => (
+                                        <div key={index} className="p-6 border rounded-xl bg-card border-border/50 shadow-sm space-y-6">
+                                            <div className="flex items-center justify-between border-b pb-4">
+                                                <h3 className="text-lg font-bold text-foreground">{person.role}</h3>
+                                                {formData.responsible_persons.length > 1 && (
+                                                    <Button variant="ghost" size="sm" className="text-destructive h-8" onClick={() => removeListItem('responsible_persons', index)}>
+                                                        Удалить
+                                                    </Button>
+                                                )}
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label>ИИН</Label>
-                                                <Input value={person.iin} onChange={(e) => handleNestedChange(index, 'responsible_persons', 'iin', e.target.value)} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Пол</Label>
-                                                <Select value={person.gender} onValueChange={(v) => handleNestedChange(index, 'responsible_persons', 'gender', v)}>
-                                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Мужской">Мужской</SelectItem>
-                                                        <SelectItem value="Женский">Женский</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Дата рождения</Label>
-                                                <Input type="date" value={person.birth_date || ''} onChange={(e) => handleNestedChange(index, 'responsible_persons', 'birth_date', e.target.value)} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Страна резиденства</Label>
-                                                <Input value={person.residency} onChange={(e) => handleNestedChange(index, 'responsible_persons', 'residency', e.target.value)} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Подпись</Label>
-                                                <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-2 h-[80px] hover:bg-muted/50 cursor-pointer" onClick={() => document.getElementById(`sig-${index}`)?.click()}>
-                                                    {person.signature_stamp ? <img src={person.signature_stamp} className="h-full w-auto object-contain" /> : <Upload className="h-5 w-5 text-muted-foreground" />}
-                                                    <input type="file" id={`sig-${index}`} hidden onChange={(e) => handlePersonFileChange(index, e.target.files?.[0])} />
+
+                                            <div className="grid md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <Label>Должность</Label>
+                                                    <Input
+                                                        value={person.role}
+                                                        onChange={(e) => handleNestedChange(index, 'responsible_persons', 'role', e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>ФИО полностью</Label>
+                                                    <Input
+                                                        value={person.full_name}
+                                                        onChange={(e) => handleNestedChange(index, 'responsible_persons', 'full_name', e.target.value)}
+                                                        placeholder="Иванов Иван Иванович"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>ИИН</Label>
+                                                    <Input
+                                                        value={person.iin}
+                                                        onChange={(e) => handleNestedChange(index, 'responsible_persons', 'iin', e.target.value)}
+                                                        placeholder="12 цифр"
+                                                        maxLength={12}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Пол</Label>
+                                                    <Select value={person.gender} onValueChange={(v) => handleNestedChange(index, 'responsible_persons', 'gender', v)}>
+                                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="Мужской">Мужской</SelectItem>
+                                                            <SelectItem value="Женский">Женский</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Дата рождения</Label>
+                                                    <Input
+                                                        type="date"
+                                                        value={person.birth_date || ''}
+                                                        onChange={(e) => handleNestedChange(index, 'responsible_persons', 'birth_date', e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Страна резиденства</Label>
+                                                    <Input
+                                                        value={person.residency}
+                                                        onChange={(e) => handleNestedChange(index, 'responsible_persons', 'residency', e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2 col-span-2">
+                                                    <Label>Подпись / Печать</Label>
+                                                    <div className="flex items-center gap-4">
+                                                        <div
+                                                            className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-2 h-[100px] w-[160px] hover:bg-muted/50 transition-colors cursor-pointer group shrink-0"
+                                                            onClick={() => document.getElementById(`sig-${index}`)?.click()}
+                                                        >
+                                                            {person.signature_stamp ? (
+                                                                <img src={person.signature_stamp} className="h-full w-full object-contain" />
+                                                            ) : (
+                                                                <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-primary">
+                                                                    <Upload className="h-5 w-5" />
+                                                                    <span className="text-[10px] uppercase font-bold tracking-tighter">Загрузить</span>
+                                                                </div>
+                                                            )}
+                                                            <input type="file" id={`sig-${index}`} hidden onChange={(e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) {
+                                                                    const reader = new FileReader();
+                                                                    reader.onloadend = () => {
+                                                                        handleNestedChange(index, 'responsible_persons', 'signature_stamp', reader.result);
+                                                                    };
+                                                                    reader.readAsDataURL(file);
+                                                                }
+                                                            }} accept="image/*" />
+                                                        </div>
+                                                        <p className="text-[11px] text-muted-foreground max-w-[200px]">
+                                                            Загрузите скан или фото подписи на прозрачном или белом фоне для автоматической подстановки в документы.
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                    <CardFooter className="flex justify-between border-t p-6 bg-muted/10">
-                        {step > 1 && (
-                            <Button variant="ghost" onClick={() => setStep(step - 1)} disabled={loading}>
-                                <ChevronLeft className="mr-2 h-4 w-4" /> Назад
-                            </Button>
-                        )}
-                        <div className="ml-auto flex gap-3">
-                            {step < 4 ? (
-                                <Button onClick={() => setStep(step + 1)}>
-                                    Продолжить <ChevronRight className="ml-2 h-4 w-4" />
-                                </Button>
-                            ) : (
-                                <Button onClick={handleSubmit} disabled={loading} className="px-8 flex items-center gap-2">
-                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                                    Завершить
+                                    ))}
+                                    <Button variant="outline" className="w-full dashed border-2 border-dashed h-12" onClick={() => addListItem('responsible_persons', { role: '', full_name: '', gender: 'Мужской', birth_date: '', iin: '', residency: 'Казахстан', signature_stamp: null })}>
+                                        <Plus className="h-4 w-4 mr-2" /> Добавить лицо
+                                    </Button>
+                                </div>
+                            )}
+                        </CardContent>
+                        <CardFooter className="flex justify-between border-t p-6 bg-muted/5">
+                            {step > 1 && (
+                                <Button variant="ghost" onClick={() => setStep(step - 1)} disabled={loading}>
+                                    <ChevronLeft className="mr-2 h-4 w-4" /> Назад
                                 </Button>
                             )}
-                        </div>
-                    </CardFooter>
-                </Card>
+                            <div className="ml-auto flex gap-3">
+                                {step < 4 ? (
+                                    <Button
+                                        onClick={() => setStep(step + 1)}
+                                        className="px-10"
+                                        disabled={step === 1 && !isStep1Valid}
+                                    >
+                                        Продолжить <ChevronRight className="ml-2 h-4 w-4" />
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        onClick={handleSubmit}
+                                        disabled={loading || !isStep1Valid}
+                                        className="px-10 flex items-center gap-2"
+                                    >
+                                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                                        Завершить
+                                    </Button>
+                                )}
+                            </div>
+                        </CardFooter>
+                    </Card>
+                </div>
             </div>
         </div>
     );

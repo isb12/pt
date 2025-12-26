@@ -1,7 +1,6 @@
-import * as React from "react"
 import { Outlet, Navigate, useLocation } from "react-router-dom"
 import { AppSidebar } from "./app-sidebar"
-import api, { setToken } from "../api"
+import { setToken } from "../api"
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -22,54 +21,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { LogOut, User as UserIcon, Settings, Building2, ChevronsUpDown } from "lucide-react"
+import { LogOut, User as UserIcon, Settings, Building2 } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 
+import { useAppContext } from "../context/AppContext"
+
 const Layout = () => {
-    const [user, setUser] = React.useState<any>(null);
-    const [loading, setLoading] = React.useState(true);
-    const [isAuthenticated, setIsAuthenticated] = React.useState(true);
-    const [company, setCompany] = React.useState<any>(null);
+    const { user, company, loading, isAuthenticated, setIsAuthenticated } = useAppContext();
     const location = useLocation();
     const navigate = useNavigate();
-
-    React.useEffect(() => {
-        const fetchCompany = async () => {
-            try {
-                const response = await api.get('/companies/my');
-                setCompany(response.data);
-            } catch (err) {
-                // Silently fail
-            }
-        };
-        fetchCompany();
-    }, []);
-
-    React.useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                let token = null;
-                try {
-                    token = localStorage.getItem('token');
-                } catch (e) {
-                    console.warn('localStorage access denied');
-                }
-
-                if (!token) {
-                    throw new Error("No token");
-                }
-                const response = await api.get('/users/me');
-                setUser(response.data);
-            } catch (error) {
-                console.error("Auth check failed", error);
-                setIsAuthenticated(false);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchUser();
-    }, []);
 
     const handleLogout = () => {
         try {
@@ -78,6 +38,7 @@ const Layout = () => {
             console.warn('localStorage access denied');
         }
         setToken(null);
+        setIsAuthenticated(false);
         navigate('/login');
     };
 
@@ -115,15 +76,21 @@ const Layout = () => {
     }
 
     const getPageTitle = (pathname: string) => {
+        if (pathname.startsWith('/settings/')) {
+            const sub = pathname.split('/')[2];
+            switch (sub) {
+                case 'main': return 'Основные настройки';
+                case 'company': return 'Настройки компании';
+                case 'account': return 'Настройки аккаунта';
+                default: return 'Настройки';
+            }
+        }
         switch (pathname) {
             case '/': return 'Главная';
             case '/documents': return 'Документы';
             case '/warehouse': return 'Склад';
             case '/counterparties': return 'Контрагенты';
-            case '/account': return 'Аккаунт';
-            case '/settings': return 'Настройки';
             case '/onboarding': return 'Регистрация компании';
-            case '/company-settings': return 'Настройки компании';
             default: return 'Project';
         }
     };
@@ -144,33 +111,23 @@ const Layout = () => {
                         </svg>
 
                         {company && (
-                            <div className="flex items-center gap-1.5">
-                                <div className="flex items-center gap-1.5">
-                                    <Avatar className="h-6 w-6 border shadow-sm flex-shrink-0">
-                                        <AvatarImage src={company.logo} alt={company.name} />
-                                        <AvatarFallback className="bg-primary/10 text-primary text-[9px]">
+                            <Link
+                                to="/settings/company"
+                                className="flex items-center gap-2 hover:bg-muted p-1 px-1.5 -ml-1 rounded-md transition-colors transition-opacity active:opacity-70 group"
+                            >
+                                <div className="h-6 w-6 border shadow-sm flex-shrink-0 rounded-sm overflow-hidden bg-primary/10">
+                                    {company.logo ? (
+                                        <img src={company.logo} alt={company.name} className="h-full w-full object-cover" />
+                                    ) : (
+                                        <div className="flex h-full w-full items-center justify-center text-primary text-[10px] font-bold">
                                             {company.name?.[0] || 'C'}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-sm font-semibold truncate max-w-[150px]">{company.name}</span>
+                                        </div>
+                                    )}
                                 </div>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <button className="flex items-center justify-center p-0.5 rounded transition-colors hover:bg-muted focus:outline-none text-muted-foreground hover:text-foreground">
-                                            <ChevronsUpDown className="size-3 flex-shrink-0" />
-                                        </button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-56" align="start">
-                                        <DropdownMenuLabel className="text-xs text-muted-foreground">Организация: {company.type}</DropdownMenuLabel>
-                                        <DropdownMenuItem asChild>
-                                            <Link to="/company-settings" className="cursor-pointer">
-                                                <Settings className="mr-2 h-4 w-4" />
-                                                <span>Профиль компании</span>
-                                            </Link>
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
+                                <span className="text-sm font-semibold truncate max-w-[150px] transition-colors">
+                                    {company.name}
+                                </span>
+                            </Link>
                         )}
 
                         <svg width="6" height="14" viewBox="0 0 6 14" fill="none" className="text-muted-foreground/30 select-none mx-0.5 hidden md:block">
@@ -207,13 +164,13 @@ const Layout = () => {
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
-                                    <Link to="/account">
+                                    <Link to="/settings/account">
                                         <UserIcon className="mr-2 h-4 w-4" />
                                         <span>Аккаунт</span>
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
-                                    <Link to="/company-settings">
+                                    <Link to="/settings/company">
                                         <Settings className="mr-2 h-4 w-4" />
                                         <span>Настройки компании</span>
                                     </Link>
